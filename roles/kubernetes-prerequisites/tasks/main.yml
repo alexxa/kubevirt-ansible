@@ -7,10 +7,6 @@
     policy: targeted
     state: permissive
 
-- name: remove firewalld package
-  package:
-    name: firewalld
-
 - name: stop and disable firewalld
   register: result
   service:
@@ -38,6 +34,8 @@
   package:
     name: "{{ epel_repo_rpm }}"
     state: present
+  when:
+    - ansible_distribution in ["CentOS","RedHat"]
 
 - name: import kubernetes rpm keys
   rpm_key:
@@ -63,7 +61,6 @@
   package: 
     name: "{{ item }}"
     state: present
-    update_cache: yes
   with_items:
     - "{{ kubernetes_packages }}"
 
