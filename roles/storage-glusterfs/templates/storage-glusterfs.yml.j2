@@ -1,0 +1,30 @@
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: kubevirt-heketi-secret
+  namespace: {{ namespace }}
+data:
+  key: {{ heketi_admin_key }}
+{% if external_provisioner %}
+type: gluster.org/glusterfile
+{% else %}
+type: kubernetes.io/glusterfs
+{% endif %}
+---
+kind: StorageClass
+apiVersion: storage.k8s.io/v1beta1
+metadata:
+  name: kubevirt
+{% if external_provisioner %}
+provisioner: gluster.org/glusterfile
+{% else %}
+provisioner: kubernetes.io/glusterfs
+{% endif %}
+reclaimPolicy: Delete
+parameters:
+  resturl: "http://{{ heketi_url | default(omit) }}"
+  restuser: admin
+  secretName: "kubevirt-heketi-secret"
+  secretNamespace: "{{ namespace }}"
+  volumeoptions: "group virt"
