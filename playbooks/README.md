@@ -54,7 +54,7 @@ Beside these three key components you might want to specify [persistent storage]
 There are two supported cluster configurations:
 
 * All-in-one, where all cluster components are deployed on a single machine
-* Single master and multiple nodes, where master, etcd and persistant storage are assiged to a single machine, and nodes are on separated machines.
+* Single master and multiple nodes, where master, etcd and persistent storage are assigned to a single machine, and nodes are on separated machines.
 
 For more information on cluster configuration please see [Planning](https://docs.openshift.org/latest/install_config/install/planning.html) and [Requirements](https://docs.openshift.org/latest/install_config/install/prerequisites.html) documentation.
 
@@ -108,9 +108,12 @@ installed and a config file in ```$HOME/.kube/config```.  Also make sure you
 indentified with the cluster using ```oc login```.
 
 Before installing KubeVirt on an existing OpenShift cluster, ensure that SELinux is disabled on all hosts:
+
 ```bash
 $ ansible-playbook -i inventory playbooks/selinux.yml
 ```
+
+Be sure to update the [inventory file](../inventory) according to your OpenSift cluster configuration or use the file you used to deploy the cluster.
 
 Install KubeVirt on your OpenShift cluster:
 
@@ -118,7 +121,7 @@ Install KubeVirt on your OpenShift cluster:
 $ ansible-playbook -i localhost playbooks/kubevirt.yml -e@vars/all.yml
 ```
 
-See [KubeVirt parameters documentation](./roles/kubevirt/README.md) for more details and update [vars/all.yml](../vars/all.yml) if needed.
+See [KubeVirt parameters documentation](../roles/kubevirt/README.md) for more details and update [vars/all.yml](../vars/all.yml) if needed.
 
 ## Deploy a new Kubernetes or OpenShift cluster and KubeVirt with Lago
 
@@ -137,9 +140,9 @@ See [Lago parameters documentation](./playbooks/provider/lago/README.md) for mor
 **storage-demo**
 All-in-one ephemeral storage.
 
-**CNS**
-```openshift-ansible``` will provide Gluster storage and the CNS role will
-create the storage class.
+**GlusterFS**
+```openshift-ansible``` will provide GlusterFS storage and the storage-glusterfs role will
+create the StorageClass.
 
 **Cinder**
 

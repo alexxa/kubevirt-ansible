@@ -1,0 +1,5 @@
+cluster: "openshift"
+action: "provision"
+glusterfs_namespace: "app-storage"
+glusterfs_name: "storage"
+external_provisioner: false

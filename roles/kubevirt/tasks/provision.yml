@@ -11,7 +11,7 @@
 
 - name: Create {{ namespace }} namespace
   shell: kubectl create namespace {{ namespace }}
-  when: ns.stdout != "{{ namespace }}"
+  when: ns.stdout != namespace
 
 - name: Add Privileged Policy
   command: "oc adm policy add-scc-to-user privileged -z {{ item }} -n {{ namespace }}"
@@ -30,19 +30,52 @@
     path: "{{ kubevirt_template_dir }}/kubevirt.yml"
   register: byo_template
 
-- name: Use kubevirt.yml template from {{ kubevirt_template_dir }}
-  set_fact:
-    manifest_version: "release"
+- name: Download KubeVirt Template
+  get_url:
+    url: "{{ release_manifest_url }}/v{{ version }}/kubevirt.yaml"
+    dest: "/tmp/kubevirt.yml"
+  when: byo_template.stat.exists == False
+
+- name: Render KubeVirt Yml
+  replace:
+    path: "/tmp/kubevirt.yml"
+    regexp: "namespace: kube-system"
+    replace: "namespace: {{ namespace }}"
+  when: byo_template.stat.exists == False
+
+- name: Render BYO template
+  template:
+    src: "{{ kubevirt_template_dir }}/kubevirt.yml"
+    dest: /tmp/kubevirt.yml
   when: byo_template.stat.exists == True
-
-- include_tasks: "{{ manifest_version }}.yml"
-
-- name: Create KubeVirt Resources
-  command: "kubectl apply -f /tmp/{{ item }}.yml"
-  with_items:
-    - "{{ dev_template_resources }}"
-  when: manifest_version=="dev"
 
 - name: Create KubeVirt Resources
   command: kubectl apply -f /tmp/kubevirt.yml
-  when: manifest_version=="release"
+
+- name: Check for vm templates in {{ kubevirt_template_dir }}
+  stat:
+    path: "{{ kubevirt_template_dir }}/{{ item }}.yaml"
+  with_items:
+    - "{{ default_vm_templates }}"
+  register: byo_vm_templates
+
+- name: Copy VM templates to /tmp
+  copy:
+    src: "{{ kubevirt_template_dir }}/{{ item }}.yaml"
+    dest: "/tmp/{{ item }}.yaml"
+  with_items: "{{ byo_vm_templates.results | selectattr('stat.exists') | map(attribute='item') | list }}"
+  when: "{{ byo_vm_templates.results | selectattr('stat.exists') | map(attribute='item') | list | length > 0 }}"
+
+- name: Download KubeVirt default VM templates
+  get_url:
+    url: "https://raw.githubusercontent.com/kubevirt/kubevirt/v{{ version }}/cluster/{{ item }}.yaml"
+    dest: "/tmp/{{ item }}.yaml"
+  with_items:
+    - "{{ default_vm_templates }}"
+  when: cluster == "openshift" and "{{ byo_vm_templates.results | selectattr('stat.exists') | map(attribute='item') | list | length == 0 }}"
+
+- name: Create default VM templates in OpenShift Namespace
+  shell: "oc apply -f /tmp/{{ item }}.yaml -n openshift"
+  with_items:
+    - "{{ default_vm_templates }}"
+  when: cluster == "openshift"
