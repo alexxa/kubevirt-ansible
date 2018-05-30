@@ -8,6 +8,7 @@
   synchronize:
     src: "{{ playbook_dir }}/../../kubevirt-ansible"
     dest: "{{ kubevirt_dir }}"
+  no_log: True
 - name: generate tests
   make:
     chdir: "{{ kubevirt_dir }}/kubevirt-ansible"
@@ -17,3 +18,4 @@
     src: "{{ kubevirt_dir }}/kubevirt-ansible/_out/tests/tests.test"
     dest: "{{ playbook_dir }}/../_out/tests/"
     flat: yes
+    
